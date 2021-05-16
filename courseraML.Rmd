@@ -1,0 +1,101 @@
+---
+title: "Coursera_Practical ML"
+author: "durvesh"
+date: "5/15/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+#Assignment 
+
+#Using devices such as Jawbone Up, Nike FuelBand, and Fitbit, it is now possible to collect a large amount of data about personal activity relatively inexpensively. The aim of this project is to predict the manner in which participants perform a barbell lift. The data comes from http://groupware.les.inf.puc-rio.br/har wherein 6 participants were asked to perform the same set of exercises correctly and incorrectly with accelerometers placed on the belt, forearm, arm, and dumbell.
+
+#For the purpose of this project, the following steps would be followed:
+
+#1.Import the Data 
+#2.Removing Columns that are not relevant
+#3.Using Random Forest 
+#4.Predicting Test Set Output for 20 cases 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(caret)
+library(tidyverse)
+library(future)
+library(randomForest)
+
+```
+
+
+```{r}
+
+## Loading the training and the test data from the given url 
+
+train<-read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"))
+test<-read.csv(url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"))
+
+
+```
+
+
+```{r}
+# We check the size of the training and test sets 
+
+object.size(train)
+object.size(test)
+
+
+```
+
+```{r}
+# For the classification problem we find number of classes to predict 
+unique(train$classe)
+```
+
+```{r}
+train<-train[,-c(1:6)] # removing the id columns that are not relevant train
+test<-test[,-c(1:6)]   # removing the id columns that are not relevant test
+
+var<-nearZeroVar(train) # find the variables with zero variance 
+var<-var[-26] # retaining the classe variable 
+t1<-train %>% select(-all_of(var))
+t2<-select_if(t1,function(x) sum(is.na(x)) <=1) #dropping columns that contain nas 
+```
+
+
+```{r}
+plan(multisession)  # parallel processing to speed up
+t2$classe <-as.factor(t2$classe) # converting the classification var to factor
+model=randomForest(classe~., data=t2, method='class') 
+
+
+```
+
+```{r}
+model # printing the results of the model
+
+```
+
+```{r}
+vec_names<-names(t2)
+vec_names<-vec_names[-length(vec_names)] # applying the same subset from train to test set columns  removing the classe columns 
+test_1<-test %>% select(all_of(vec_names))
+
+
+```
+
+
+
+```{r}
+base_predict<-predict(model,test_1) # creating a prediction based on model
+```
+
+```{r}
+base_predict # printing out the results of prediction 
+
+```
+
